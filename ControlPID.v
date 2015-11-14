@@ -14,7 +14,7 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	 reg dataf_o;
 	 input wire dataf_i;
 	 output wire dataf_oo;
-	 output wire signed [2*WIDTH-1:0] servo_o;
+	 output wire signed [WIDTH-1:0] servo_o;
 
 	 input wire [WIDTH-1:0] y_k_i;
 	 input [WIDTH-1:0] ref_i;
@@ -31,15 +31,15 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 
 	 //////////////////////////////////////registros////////////////////////////////////
 	 wire overflow1, underflow1,overflow2,underflow2,overflow3,underflow3, overflow_mult, underflow_mult ;
-	 reg signed [WIDTH-1:0] Regy_k_1,Regy_k,Reg_ref;
-	 reg signed [2*WIDTH-1:0]Reg_p,Reg_I,Reg_I_1,Reg_D,Reg_I_P,Reg_servo;
+	 reg signed [WIDTH-1:0] Regy_k_1,Regy_k,Reg_ref,Reg_servo;
+	 reg signed [WIDTH-1:0]Reg_p,Reg_I,Reg_I_1,Reg_D,Reg_I_P;
 	  
 	 reg [1:0] muxselect1;
 	 reg  muxselect2;
 	 wire signed [2*WIDTH-1:0] result_mult_temp;
 	 wire signed [WIDTH-1:0] result_res1,result_res2,result_mult,result_res3, result_res3_2, result_res2_2, result_res1_2;
 	 //////////////////salida mux/////////////////
-	 wire signed [2*WIDTH-1:0]out1,out2,out3,out4;  
+	 wire signed [WIDTH-1:0]out1,out2,out3,out4;  
 	 /////////////////////////////////////////////
 	 
 	 //Module Arithmetic operation RESTA1
@@ -74,7 +74,7 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	 ////////////****************trunc mult*********************///////////
 	 assign result_mult= (overflow_mult) ?  (12'sb011111111111) :
 							   (underflow_mult) ? (12'sb111111111111) :
-						    	$signed({result_mult_temp[2*WIDTH-1],result_mult_temp[2*WIDTH-14:2*WIDTH-24]});	
+						    	$signed({result_mult_temp[2*WIDTH-1],result_mult_temp[2*WIDTH-14:2*WIDTH-24]});//asigna al truncamiento los menos significativos	
 	 
 	 //Module Arithmetic operation TRUNCAMIENTO PARA SALIDA PRIMER RESTA FINAL////////////////////////////////////
 	 assign overflow3 = (~out3[WIDTH-1]&&out4[WIDTH-1]&&~result_res3_2[WIDTH-1]) ? 1'b1  :  1'b0;
@@ -89,20 +89,20 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	assign out1= (muxselect1==2'b10) ? result_res1:
 					  (muxselect1==2'b00) ? Regy_k:
 					  (muxselect1==2'b01) ? result_res2:					 
-					   8'sb0;
+					   12'sb0;
 	 //////////////////////////MUXES///////////////////////////////
 	assign out2= (muxselect1==2'b10) ? coeff_1:
 					  (muxselect1==2'b00) ? coeff_2:
 					  (muxselect1==2'b01) ? coeff_3:					 
-					   8'sb0;
+					   12'sb0;
 	//////////////////////////MUXES///////////////////////////////	
 	assign out3= (muxselect2==1'b0) ? Reg_I:
 					 (muxselect2==1'b1) ? Reg_I_P:					    					 
-					  8'sb0;
+					  12'sb0;
    //////////////////////////MUXES///////////////////////////////	
 	assign out4= (muxselect2==1'b0) ? Reg_p:
 					  (muxselect2==1'b1) ? Reg_D:					    					 
-					   8'sb0;
+					   12'sb0;
 						
 	/////////////////////////Parameter////////////////////////////
 	
@@ -137,17 +137,17 @@ always @(posedge clk_i,posedge reset)
 						state_reset: 
 							begin
 								dataf_o=1'b0;
-								Reg_servo=16'b0;
+								Reg_servo=12'b0;
 								
-								Reg_p=16'b0;
-								Reg_I=16'b0;
-								Reg_I_1=16'b0;
-								Reg_D=16'b0;
-								Reg_I_P=16'b0;
+								Reg_p=12'b0;
+								Reg_I=12'b0;
+								Reg_I_1=12'b0;
+								Reg_D=12'b0;
+								Reg_I_P=12'b0;
 								
-                        Regy_k=8'b0;
-								Regy_k_1=8'b0;
-								Reg_ref=8'b0;
+                        Regy_k=12'b0;
+								Regy_k_1=12'b0;
+								Reg_ref=12'b0;
 								
 								state_next=state_start;
 							end					
@@ -178,7 +178,7 @@ always @(posedge clk_i,posedge reset)
 							end
 						state_P2:
 							begin
-								Reg_p=result_mult_temp;
+								Reg_p=result_mult;
 
 								state_next=state_I1;
 							end
@@ -191,7 +191,7 @@ always @(posedge clk_i,posedge reset)
 
 						state_I2:
 							begin
-								Reg_I=result_mult_temp;
+								Reg_I=result_mult;
 								
 								state_next=state_s1;
 							end
@@ -205,7 +205,7 @@ always @(posedge clk_i,posedge reset)
 						state_D2:
 							begin
 
-								Reg_D=result_mult_temp;
+								Reg_D=result_mult;
 
 								state_next=state_servo;
 							end
