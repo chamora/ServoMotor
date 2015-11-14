@@ -30,14 +30,14 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	 assign servo_o=Reg_servo;  ///Me estaba dando problemas 
 
 	 //////////////////////////////////////registros////////////////////////////////////
-	 wire overflow1, underflow1,overflow2,underflow2,overflow3,underflow3, overflow_mult, underflow_mult ;
+	 wire overflow1, underflow1,overflow2,underflow2,overflow3,underflow3, overflow_mult, underflow_mult,overflowsum,underflowsum ;
 	 reg signed [WIDTH-1:0] Regy_k_1,Regy_k,Reg_ref,Reg_servo;
 	 reg signed [WIDTH-1:0]Reg_p,Reg_I,Reg_I_1,Reg_D,Reg_I_P;
 	  
 	 reg [1:0] muxselect1;
 	 reg  muxselect2;
 	 wire signed [2*WIDTH-1:0] result_mult_temp;
-	 wire signed [WIDTH-1:0] result_res1,result_res2,result_mult,result_res3, result_res3_2, result_res2_2, result_res1_2;
+	 wire signed [WIDTH-1:0] result_res1,result_res2,result_mult,result_res3, result_res3_2, result_res2_2, result_res1_2, result_sum_t,result_sum;
 	 //////////////////salida mux/////////////////
 	 wire signed [WIDTH-1:0]out1,out2,out3,out4;  
 	 /////////////////////////////////////////////
@@ -46,12 +46,12 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	 assign result_res1_2=  Regy_k-Regy_k_1;
 	 //Module Arithmetic operation RESTA2
 	 assign result_res2_2=  Regy_k-Reg_ref;
-	 //Module Arithmetic operation Salida
-	 
-	 assign result_res3_2=  out3-out4; //
-	 
+	 //Module Arithmetic operation RESTA Salida
+	 assign result_res3_2=  out3-out4; //	 
 	 //Module Arithmetic operation multiplicacion
 	 assign result_mult_temp=  out1*out2;
+	 ////////Module Arimetric SUMA ///////////////////
+	 assign result_sum_t=result_mult+Reg_I_1;
 	 ////////****************************************************************************************************///////////
 	 //Module Arithmetic operation SALIDA RESTADOR 1/////////////////////////////////////////////////////
 	 assign overflow1 = (~Regy_k[WIDTH-1]&&Regy_k_1[WIDTH-1]&&~result_res1_2[WIDTH-1]) ? 1'b1  :  1'b0;
@@ -83,6 +83,16 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	 assign result_res3= (overflow3)  ? (12'sb011111111111) :
 							   (underflow3) ? (12'sb111111111111) :
 							   $signed(result_res3_2);	
+								
+	////////****************************************************************************************************///////////
+	 //Module Arithmetic operation SUMA/////////////////////////////////////////////////////
+	 assign overflowsum = (~result_mult[WIDTH-1]&&Reg_I_1[WIDTH-1]&&~result_sum_t[WIDTH-1]) ? 1'b1  :  1'b0;
+	 assign underflowsum = (result_mult[WIDTH-1]&&~Reg_I_1[WIDTH-1]&&result_sum_t[WIDTH-1]) ? 1'b1  :  1'b0;
+	 //******************************OVER Y UNDER**********************************//
+	 assign result_sum= (overflowsum)  ? (12'sb011111111111) :
+							   (underflowsum) ? (12'sb111111111111) :
+							   $signed(result_sum_t);	
+	//**************************************************************************************************************///////	 
 	 
 	 /////////////////////////////////////////////////////////////////////////////////////////////////////////////	 
 	 //////////////////////////MUXES///////////////////////////////
@@ -165,14 +175,14 @@ always @(posedge clk_i,posedge reset)
 							end
 						state_y_k:
 							begin
-								Regy_k=y_k_i;
+								Regy_k=y_k_i;//MArcos....
 								muxselect1=2'b00;
 								
 								state_next=state_P1;
 							end
 						state_P1:
 							begin
-								muxselect1=2'b00;
+								muxselect1=2'b00; // este estado no hace ni merga
 								
 								state_next=state_P2;
 							end
@@ -191,7 +201,7 @@ always @(posedge clk_i,posedge reset)
 
 						state_I2:
 							begin
-								Reg_I=result_mult;
+								Reg_I=result_sum;
 								
 								state_next=state_s1;
 							end
