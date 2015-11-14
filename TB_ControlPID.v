@@ -1,25 +1,6 @@
 `timescale 1ns / 1ps
 
 ////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer:
-//
-// Create Date:   13:13:01 11/11/2015
-// Design Name:   ControlPID
-// Module Name:   C:/Users/USUARIO/Documents/GitHub/ServoMotor/TB_ControlPID.v
-// Project Name:  ServoP
-// Target Device:  
-// Tool versions:  
-// Description: 
-//
-// Verilog Test Fixture created by ISE for module: ControlPID
-//
-// Dependencies:
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
 ////////////////////////////////////////////////////////////////////////////////
 
 module TB_ControlPID;
@@ -58,9 +39,9 @@ module TB_ControlPID;
 		clk_i = 0;
 		dataf_i = 0;
 		reset = 0;
-		coeff_1 = 0;
-		coeff_2 = 0;
-		coeff_3 = 0;
+		coeff_1 = 8'b00010010;   // 18
+		coeff_2 = 8'b00000111;  //   7
+		coeff_3 = 8'b10010110; //  150   // 8 bits no da para los bits de signo 
 		ref_i = 0;
 
 		// Wait 100 ns for global reset to finish

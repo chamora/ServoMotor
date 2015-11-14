@@ -2,9 +2,14 @@
 
 module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, ref_i, servo_o
     );
+	 
 	 parameter WIDTH=12;
 	 input wire clk_i;
 	 input wire reset;
+	
+	 //input wire [11:0] arduino_i;
+	 //output wire [11:0] LEDS_o;
+	 //reg [11:0] intermedio, intermedio2;
 	
 	 reg dataf_o;
 	 input wire dataf_i;
