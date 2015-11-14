@@ -17,7 +17,7 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	 output wire signed [WIDTH-1:0] servo_o;
 
 	 input wire [WIDTH-1:0] y_k_i;
-	 input [WIDTH-1:0] ref_i;
+	 input signed [WIDTH-1:0] ref_i;
 	 
 
 	 input wire signed [WIDTH-1:0] coeff_1;
@@ -45,7 +45,7 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	 //Module Arithmetic operation RESTA1
 	 assign result_res1_2=  Regy_k-Regy_k_1;
 	 //Module Arithmetic operation RESTA2
-	 assign result_res2_2=  Regy_k-Reg_ref;
+	 assign result_res2_2=  Reg_ref-Regy_k;
 	 //Module Arithmetic operation RESTA Salida
 	 assign result_res3_2=  out3-out4; //	 
 	 //Module Arithmetic operation multiplicacion
@@ -54,31 +54,31 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 	 assign result_sum_t=result_mult+Reg_I_1;
 	 ////////****************************************************************************************************///////////
 	 //Module Arithmetic operation SALIDA RESTADOR 1/////////////////////////////////////////////////////
-	 assign overflow1 = (~Regy_k[WIDTH-1]&&Regy_k_1[WIDTH-1]&&~result_res1_2[WIDTH-1]) ? 1'b1  :  1'b0;
-	 assign underflow1 = (Regy_k[WIDTH-1]&&~Regy_k_1[WIDTH-1]&&result_res1_2[WIDTH-1]) ? 1'b1  :  1'b0;
+	 assign overflow1 = (~Regy_k[WIDTH-1]&Regy_k_1[WIDTH-1]&result_res1_2[WIDTH-1]) ? 1'b1  :  1'b0;
+	 assign underflow1 = (Regy_k[WIDTH-1]&~Regy_k_1[WIDTH-1]&~result_res1_2[WIDTH-1]) ? 1'b1  :  1'b0;
 	 //******************************OVER Y UNDER**********************************//
 	 assign result_res1= (overflow1)  ? (12'sb011111111111) :
 							   (underflow1) ? (12'sb111111111111) :
 							   $signed(result_res1_2);	
 	//**************************************************************************************************************///////	 
 	 //Module Arithmetic operation TRUNCAMIENTO PARA SALIDA RESTADOR 2/////////////////////////////////////////////////////
-	  assign overflow2 = (~Regy_k[WIDTH-1]&&Reg_ref[WIDTH-1]&&~result_res2_2[WIDTH-1]) ? 1'b1  :  1'b0;
-	 assign underflow2 = (Regy_k[WIDTH-1]&&~Reg_ref[WIDTH-1]&&result_res2_2[WIDTH-1]) ? 1'b1  :  1'b0;
+	  assign overflow2 = (~Reg_ref[WIDTH-1]&Regy_k[WIDTH-1]&result_res2_2[WIDTH-1]) ? 1'b1  :  1'b0;
+	 assign underflow2 = (Reg_ref[WIDTH-1]&~Regy_k[WIDTH-1]&~result_res2_2[WIDTH-1]) ? 1'b1  :  1'b0;
 	 //******************************OVER Y UNDER**********************************//
 	 assign result_res2= (overflow2)  ? (12'sb011111111111) :
 							   (underflow2) ? (12'sb111111111111) :
 							   $signed(result_res2_2);	
 	 //Module Arithmetic operation TRUNCAMIENTO PARA SALIDA MULTIPLICADOR
-	 assign overflow_mult = (~result_mult_temp[2*WIDTH-1] && |result_mult_temp[2*WIDTH-2:2*WIDTH-12]) ? 1'b1  :  1'b0;
-	 assign underflow_mult = (result_mult_temp[2*WIDTH-1] && ~(&result_mult_temp[2*WIDTH-2:2*WIDTH-12])) ? 1'b1  :  1'b0;
+	 assign overflow_mult = (~result_mult_temp[2*WIDTH-1] & |result_mult_temp[2*WIDTH-2:2*WIDTH-12]) ? 1'b1  :  1'b0;
+	 assign underflow_mult = (result_mult_temp[2*WIDTH-1] & ~(&result_mult_temp[2*WIDTH-2:2*WIDTH-12])) ? 1'b1  :  1'b0;
 	 ////////////****************trunc mult*********************///////////
 	 assign result_mult= (overflow_mult) ?  (12'sb011111111111) :
 							   (underflow_mult) ? (12'sb111111111111) :
 						    	$signed({result_mult_temp[2*WIDTH-1],result_mult_temp[2*WIDTH-14:2*WIDTH-24]});//asigna al truncamiento los menos significativos	
 	 
 	 //Module Arithmetic operation TRUNCAMIENTO PARA SALIDA PRIMER RESTA FINAL////////////////////////////////////
-	 assign overflow3 = (~out3[WIDTH-1]&&out4[WIDTH-1]&&~result_res3_2[WIDTH-1]) ? 1'b1  :  1'b0;
-	 assign underflow3 = (out3[WIDTH-1]&&~out4[WIDTH-1]&&result_res3_2[WIDTH-1]) ? 1'b1  :  1'b0;
+	 assign overflow3 = (~out3[WIDTH-1]&out4[WIDTH-1]&result_res3_2[WIDTH-1]) ? 1'b1  :  1'b0;
+	 assign underflow3 = (out3[WIDTH-1]&~out4[WIDTH-1]&~result_res3_2[WIDTH-1]) ? 1'b1  :  1'b0;
 	 //******************************OVER Y UNDER**********************************//
 	 assign result_res3= (overflow3)  ? (12'sb011111111111) :
 							   (underflow3) ? (12'sb111111111111) :
@@ -86,8 +86,8 @@ module ControlPID(dataf_oo,y_k_i,clk_i,dataf_i,reset,coeff_1,coeff_2,coeff_3, re
 								
 	////////****************************************************************************************************///////////
 	 //Module Arithmetic operation SUMA/////////////////////////////////////////////////////
-	 assign overflowsum = (~result_mult[WIDTH-1]&&Reg_I_1[WIDTH-1]&&~result_sum_t[WIDTH-1]) ? 1'b1  :  1'b0;
-	 assign underflowsum = (result_mult[WIDTH-1]&&~Reg_I_1[WIDTH-1]&&result_sum_t[WIDTH-1]) ? 1'b1  :  1'b0;
+	 assign overflowsum = (~result_mult[WIDTH-1]&~Reg_I_1[WIDTH-1]&result_sum_t[WIDTH-1]) ? 1'b1  :  1'b0;
+	 assign underflowsum = (result_mult[WIDTH-1]&Reg_I_1[WIDTH-1]&~result_sum_t[WIDTH-1]) ? 1'b1  :  1'b0;
 	 //******************************OVER Y UNDER**********************************//
 	 assign result_sum= (overflowsum)  ? (12'sb011111111111) :
 							   (underflowsum) ? (12'sb111111111111) :
@@ -157,7 +157,7 @@ always @(posedge clk_i,posedge reset)
 								
                         Regy_k=12'b0;
 								Regy_k_1=12'b0;
-								Reg_ref=12'b0;
+								Reg_ref=ref_i;
 								
 								state_next=state_start;
 							end					

@@ -7,7 +7,7 @@ module TestBench_TOP;
 	reg [11:0] ADC_i;
 	reg dataf_i;
 	reg [11:0] ref_i;
-	reg [11:0] v_mem [0:4];
+	reg [11:0] v_mem [0:8];
 	// Outputs
 	wire PWM_o;
 	wire [11:0] LEDS_o;
@@ -33,12 +33,12 @@ module TestBench_TOP;
 
 		// Wait 100 ns for global reset to finish
 		#100;
-		ref_i=12'b000000001010;
+		ref_i=12'b001000101010;
       reset=1;  
 		#50;
 		reset=0;
 		$readmemb("Datos_pruebas_I_PD.txt",v_mem);
-		for (i=0;i<6;i=i+1)
+		for (i=0;i<8;i=i+1)
 		begin 
 		ADC_i=v_mem[i];
 		dataf_i=1;
